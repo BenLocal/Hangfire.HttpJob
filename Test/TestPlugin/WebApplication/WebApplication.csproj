@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <Target Name="BuildPlugin" BeforeTargets="Build">
+    <MSBuild Projects="..\AppPlugin1\AppPlugin1.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=..\WebApplication\$(OutputPath)/plugins/AppPlugin1/" />
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Hangfire.HttpJob.Agent.Plugin\Hangfire.HttpJob.Agent.Plugin.csproj" />
+    <ProjectReference Include="..\..\..\Hangfire.HttpJob.Agent\Hangfire.HttpJob.Agent.csproj" />
+  </ItemGroup>
+</Project>

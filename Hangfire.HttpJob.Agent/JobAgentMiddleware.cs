@@ -21,12 +21,14 @@ namespace Hangfire.HttpJob.Agent
         private readonly IOptions<JobAgentOptions> _options;
         private readonly ILoggerFactory _loggerFactory;
         private readonly LazyConcurrentDictionary transitentJob;
-        public JobAgentMiddleware(ILogger<JobAgentMiddleware> logger, IOptions<JobAgentOptions> options, ILoggerFactory loggerFactory)
+        private readonly IJobAgentService _jobAgentServices;
+        public JobAgentMiddleware(ILogger<JobAgentMiddleware> logger, IOptions<JobAgentOptions> options, ILoggerFactory loggerFactory, IJobAgentService jobAgentServices)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
             _options = options;
             transitentJob = new LazyConcurrentDictionary();
+            _jobAgentServices = jobAgentServices;
         }
 
        
@@ -62,7 +64,7 @@ namespace Hangfire.HttpJob.Agent
 
                 agentAction = agentAction.ToLower();
                 var requestBody = GetJobItem(httpContext);
-                var agentClassType = GetAgentType(agentClass);
+                var agentClassType = _jobAgentServices.GetAgentType(agentClass, httpContext);
                 var jobHeaders = GetJobHeaders(httpContext);
                 if (!string.IsNullOrEmpty(agentClassType.Item2))
                 {

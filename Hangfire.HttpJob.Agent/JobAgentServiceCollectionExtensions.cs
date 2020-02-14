@@ -15,6 +15,7 @@ namespace Hangfire.HttpJob.Agent
         {
             serviceCollection.AddOptions();
             serviceCollection.TryAddSingleton<IConfigureOptions<JobAgentOptions>, ConfigureJobAgentOptions>();
+            serviceCollection.TryAddSingleton<IJobAgentService, DefaultJobAgentService>();
             var configurer = new JobAgentServiceConfigurer(serviceCollection);
             if (configure == null)
             {
