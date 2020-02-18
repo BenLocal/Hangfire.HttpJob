@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Hangfire.HttpJob.Agent;
@@ -20,6 +21,8 @@ namespace WebApplication
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHangfireHttpJobAgent();
+
             services.AddHangfireHttpJobAgentPlugins(options => {
                 options.JobAgentTypes = new List<Type>() { typeof(JobAgent) };
             });
@@ -34,17 +37,13 @@ namespace WebApplication
             }
 
             app.UseHangfireHttpJobAgent();
-
+            app.UseHangfireHttpJobAgentPlugins();
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGet("/", async context =>
                 {
-                    //var _partManager = app.ApplicationServices.GetRequiredService<ApplicationPartManager>();
-                    //var jobAgentFeature = new JobAgentFeature();
-                    //_partManager.PopulateFeature(jobAgentFeature);
-                    //var controllers = jobAgentFeature.JobAgents.ToList();
                     await context.Response.WriteAsync("Hello World!");
                 });
             });

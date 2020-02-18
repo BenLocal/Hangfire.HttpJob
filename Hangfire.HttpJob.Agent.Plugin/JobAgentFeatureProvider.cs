@@ -41,7 +41,7 @@ namespace Hangfire.HttpJob.Agent.Plugin
 
         public void PopulateFeature(IEnumerable<ApplicationPart> parts, JobAgentFeature feature)
         {
-            if (_featureCache != null)
+            if (!feature.Reload && _featureCache != null)
             {
                 _featureCache.ForEach(x => feature.JobAgents.Add(x));
                 return;

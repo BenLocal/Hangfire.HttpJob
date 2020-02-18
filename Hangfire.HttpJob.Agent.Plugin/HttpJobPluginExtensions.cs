@@ -1,4 +1,6 @@
-﻿using McMaster.NETCore.Plugins;
+﻿using Hangfire.HttpJob.Agent.Config;
+using McMaster.NETCore.Plugins;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,50 +31,24 @@ namespace Hangfire.HttpJob.Agent.Plugin
                     manager.FeatureProviders.Add(new JobAgentFeatureProvider(options.JobAgentTypes));
                 });
 
-            // 将所有Plugin添加到ApplicationParts中
-            foreach (var dir in Directory.GetDirectories(Path.Combine(AppContext.BaseDirectory, "plugins")))
-            {
-                var assemblyFile = Path.Combine(dir, Path.GetFileName(dir) + ".dll");
-                if (File.Exists(assemblyFile))
-                {
-                    var plugin = PluginLoader.CreateFromAssemblyFile(
-                        assemblyFile,
-                        config =>
-                        {
-                            config.PreferSharedTypes = true;
-                            config.EnableHotReload = true; // TODO
-                        });
-
-                    var pluginAssembly = plugin.LoadDefaultAssembly();
-                    var partFactory = ApplicationPartFactory.GetApplicationPartFactory(pluginAssembly);
-                    foreach (var part in partFactory.GetApplicationParts(pluginAssembly))
-                    {
-                        mvcBuilder.PartManager.ApplicationParts.Add(part);
-                    }
-
-                    // 将所有IPluginConfigure中的配置DI到services中
-                    foreach (var pluginType in pluginAssembly.GetTypes()
-                        .Where(t => typeof(IPluginConfigure).IsAssignableFrom(t) &&
-                            !t.IsAbstract && 
-                            t != typeof(IPluginConfigure)))
-                    {
-                        var pluginConfig = Activator.CreateInstance(pluginType) as IPluginConfigure;
-                        pluginConfig?.Configure(services);
-                    }
-                }
-            }
-
-            // 修改HttpAnget中默认配置
-            services.AddHangfireHttpJobAgent(config => {
-                var jobAgentFeature = JobAgentFeature.GetFromApplicationPart(mvcBuilder.PartManager);
-                foreach (var type in jobAgentFeature.JobAgents)
-                {
-                    config.AddJobAgent(type);
-                }
-            });
+            // 添加Plugin
+            var context = new PluginContext(services, options, mvcBuilder.PartManager);
+            context.Loader().AddJobAgents();
+            services.AddSingleton(context);
 
             // 修改默认IJobAgentService
             services.AddSingleton<IJobAgentService, JobAgentServiceWapper>();
+
+            // 文件监视
+            services.AddSingleton<DirectoryWatcherHandler>();
+            services.AddHostedService<DirectoryWatcherService>();
+        }
+
+        public static void UseHangfireHttpJobAgentPlugins(this IApplicationBuilder app)
+        {
+            var context = app.ApplicationServices.GetRequiredService<PluginContext>();
+
+            context.SetProvider(app.ApplicationServices);
         }
     }
 }
